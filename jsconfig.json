@@ -1,8 +1,21 @@
 {
     "compilerOptions": {
+        "allowJs": true,
+        "module": "ESNext",
+        "moduleResolution": "Bundler",
+        "jsx": "react-jsx",
+        "target": "ESNext",
+        "checkJs": false,
+        "baseUrl": ".",
         "paths": {
-            "@/*": ["./resources/js/*"]
+            "@/*": ["resources/js/*"]
         }
     },
+    "include": [
+        "resources/js/**/*.js",
+        "resources/js/**/*.jsx",
+        "resources/js/**/*.ts",
+        "resources/js/**/*.tsx"
+    ],
     "exclude": ["node_modules", "public"]
 }

@@ -1,0 +1,218 @@
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --font-size: 16px;
+
+  /* Nutri-Log Custom Colors - Primary (Hijau Pakcoy) */
+  --primary-50: #F0F7F1;
+  --primary-100: #DCEBDF;
+  --primary-200: #B9D7BF;
+  --primary-300: #8DBE96;
+  --primary-400: #5FA46C;
+  --primary-500: #3F8A4F;
+  --primary-600: #2F6E3D;
+  --primary-700: #245430;
+  --primary-800: #1B3F24;
+  --primary-900: #112A18;
+
+  /* Accent (Kuning Sekam) */
+  --accent-400: #E8B939;
+  --accent-500: #D4A017;
+  --accent-600: #A87C0F;
+
+  /* Neutral (Warm Gray) */
+  --neutral-50: #FAFAF8;
+  --neutral-100: #F4F3EF;
+  --neutral-200: #E8E6DF;
+  --neutral-300: #D1CFC5;
+  --neutral-400: #A8A59A;
+  --neutral-500: #76746A;
+  --neutral-600: #54524B;
+  --neutral-700: #3A3934;
+  --neutral-800: #25241F;
+  --neutral-900: #15140F;
+
+  /* Status Colors */
+  --success: #2F8F4D;
+  --warning: #D89614;
+  --danger: #C73E3E;
+  --info: #2B6CB0;
+
+  /* Theme Mappings */
+  --background: #ffffff;
+  --foreground: var(--neutral-900);
+  --card: #ffffff;
+  --card-foreground: var(--neutral-900);
+  --popover: #ffffff;
+  --popover-foreground: var(--neutral-900);
+  --primary: var(--primary-500);
+  --primary-foreground: #ffffff;
+  --secondary: var(--neutral-100);
+  --secondary-foreground: var(--neutral-700);
+  --muted: var(--neutral-100);
+  --muted-foreground: var(--neutral-500);
+  --accent: var(--accent-500);
+  --accent-foreground: var(--neutral-900);
+  --destructive: var(--danger);
+  --destructive-foreground: #ffffff;
+  --border: var(--neutral-200);
+  --input: transparent;
+  --input-background: #ffffff;
+  --switch-background: var(--neutral-300);
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: var(--primary-500);
+  --chart-1: var(--primary-500);
+  --chart-2: var(--accent-500);
+  --chart-3: var(--info);
+  --chart-4: var(--success);
+  --chart-5: var(--warning);
+  --radius: 0.625rem;
+  --sidebar: var(--neutral-50);
+  --sidebar-foreground: var(--neutral-900);
+  --sidebar-primary: var(--primary-500);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--primary-50);
+  --sidebar-accent-foreground: var(--primary-700);
+  --sidebar-border: var(--neutral-200);
+  --sidebar-ring: var(--primary-500);
+}
+
+.dark {
+  --background: var(--neutral-900);
+  --foreground: var(--neutral-50);
+  --card: var(--neutral-800);
+  --card-foreground: var(--neutral-50);
+  --popover: var(--neutral-800);
+  --popover-foreground: var(--neutral-50);
+  --primary: var(--primary-400);
+  --primary-foreground: var(--neutral-900);
+  --secondary: var(--neutral-700);
+  --secondary-foreground: var(--neutral-50);
+  --muted: var(--neutral-700);
+  --muted-foreground: var(--neutral-400);
+  --accent: var(--accent-400);
+  --accent-foreground: var(--neutral-900);
+  --destructive: var(--danger);
+  --destructive-foreground: #ffffff;
+  --border: var(--neutral-600);
+  --input: var(--neutral-700);
+  --ring: var(--primary-400);
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --chart-1: var(--primary-400);
+  --chart-2: var(--accent-400);
+  --chart-3: var(--info);
+  --chart-4: var(--success);
+  --chart-5: var(--warning);
+  --sidebar: var(--neutral-900);
+  --sidebar-foreground: var(--neutral-50);
+  --sidebar-primary: var(--primary-400);
+  --sidebar-primary-foreground: var(--neutral-900);
+  --sidebar-accent: var(--neutral-700);
+  --sidebar-accent-foreground: var(--neutral-50);
+  --sidebar-border: var(--neutral-600);
+  --sidebar-ring: var(--primary-400);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /**
+  * Default typography styles for HTML elements (h1-h4, p, label, button, input).
+  * These are in @layer base, so Tailwind utility classes (like text-sm, text-lg) automatically override them.
+  */
+
+  html {
+    font-size: var(--font-size);
+  }
+
+  h1 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  h2 {
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  h4 {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  label {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  button {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  input {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-normal);
+    line-height: 1.5;
+  }
+}
