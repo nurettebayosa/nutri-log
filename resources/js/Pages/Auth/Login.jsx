@@ -127,7 +127,7 @@ export default function Login({ status, canResetPassword }) {
 
                         <div className="mt-6 text-center">
                             <Link href="/akses" className="text-sm text-[var(--primary-500)] hover:underline">
-                                Lupa akun? Hubungi owner
+                                Lupa akun atau perlu akun baru? Hubungi owner
                             </Link>
                         </div>
 

@@ -1,25 +1,19 @@
 <?php
 
 namespace Database\Seeders;
-
-use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
     /**
      * Seed the application's database.
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // User dummy (Pak Kiki sebagai owner & Pak Tirta sebagai karyawan)
+        // sudah di-INSERT langsung via migration setup_nutrilog_schema.
+        //
+        // Seeder ini sengaja dikosongkan agar tidak ada konflik.
+        // Tambahkan seeder lain di sini kalau perlu data tambahan.
     }
 }

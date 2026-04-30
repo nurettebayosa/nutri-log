@@ -6,12 +6,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
+    return redirect()->route('dashboard');
 });
 
 Route::get('/akses', function () {
@@ -20,29 +15,21 @@ Route::get('/akses', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
-    Route::get('/dashboard', function () {
-        return Inertia::render('Dashboard');
-    })->name('dashboard');
+    // === ROUTES BATCH 1 (UDAH NYAMBUNG CONTROLLER) ===
+    Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
 
-    Route::get('/riwayat-sensor', function () {
-        return Inertia::render('Sensor/History');
-    })->name('sensor.history');
+    Route::get('/riwayat-sensor', [\App\Http\Controllers\SensorHistoryController::class, 'index'])->name('sensor.history');
 
-    Route::get('/blok', function () {
-        return Inertia::render('Blocks/Index');
-    })->name('blocks.index');
+    Route::get('/blok', [\App\Http\Controllers\BlockController::class, 'index'])->name('blocks.index');
+    Route::get('/blok/{id}', [\App\Http\Controllers\BlockController::class, 'show'])->name('blocks.show');
 
+    Route::get('/jadwal-fertigasi', [\App\Http\Controllers\FertigationScheduleController::class, 'index'])->name('fertigation.schedule');
+    Route::post('/jadwal-fertigasi/{logId}/done', [\App\Http\Controllers\FertigationScheduleController::class, 'markDone'])->name('fertigation.markDone');
+
+    // === ROUTES STUB (BELUM ADA CONTROLLERNYA) ===
     Route::get('/laporan', function () {
         return Inertia::render('Reports/Index');
     })->name('reports.index');
-
-    Route::get('/blok/{id}', function ($id) {
-        return Inertia::render('Blocks/Show', ['blockId' => $id]);
-    })->name('blocks.show');
-
-    Route::get('/jadwal-fertigasi', function () {
-        return Inertia::render('Fertigation/Schedule');
-    })->name('fertigation.schedule');
 
     Route::get('/kontrol-pompa', function () {
         return Inertia::render('Pump/Control');

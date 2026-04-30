@@ -123,29 +123,27 @@ export default function DashboardLayout({ children }) {
             {/* Sidebar Desktop */}
             <aside
                 className={`${
-                    sidebarOpen ? 'w-64' : 'w-16'
+                    sidebarOpen ? 'w-70' : 'w-16'
                 } bg-white border-r border-[var(--neutral-200)] transition-all duration-300 hidden md:flex flex-col`}
             >
                 {/* Logo */}
-                <div className="h-16 flex items-center justify-between px-4 border-b border-[var(--neutral-200)]">
-                    {sidebarOpen ? (
+                <div className={`h-16 flex items-center border-b border-[var(--neutral-200)] ${
+                    sidebarOpen ? 'justify-between px-4' : 'justify-center'
+                }`}>
+                    {sidebarOpen && (
                         <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full bg-[var(--primary-500)] flex items-center justify-center">
+                            <div className="w-8 h-8 rounded-full bg-[var(--primary-500)] flex items-center justify-center flex-shrink-0">
                                 <Leaf className="w-5 h-5 text-white" />
                             </div>
                             <div>
                                 <div className="font-bold text-sm text-[var(--neutral-900)]">NUTRI-LOG</div>
-                                <div className="text-xs text-[var(--neutral-500)]">PT. Prodaya Anugerah Selaras</div>
+                                <div className="text-xs text-[var(--neutral-500)] whitespace-nowrap">PT. Prodaya Anugerah Selaras</div>
                             </div>
-                        </div>
-                    ) : (
-                        <div className="w-8 h-8 rounded-full bg-[var(--primary-500)] flex items-center justify-center mx-auto">
-                            <Leaf className="w-5 h-5 text-white" />
                         </div>
                     )}
                     <button
                         onClick={() => setSidebarOpen(!sidebarOpen)}
-                        className="p-1 hover:bg-[var(--neutral-100)] rounded"
+                        className="p-1.5 hover:bg-[var(--neutral-100)] rounded"
                     >
                         <Menu className="w-4 h-4" />
                     </button>
@@ -186,7 +184,7 @@ export default function DashboardLayout({ children }) {
             {mobileMenuOpen && (
                 <div className="fixed inset-0 z-50 md:hidden">
                     <div className="absolute inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
-                    <aside className="absolute left-0 top-0 bottom-0 w-64 bg-white border-r border-[var(--neutral-200)] flex flex-col">
+                    <aside className="absolute left-0 top-0 bottom-0 w-70 bg-white border-r border-[var(--neutral-200)] flex flex-col">
                         <div className="h-16 flex items-center justify-between px-4 border-b border-[var(--neutral-200)]">
                             <div className="flex items-center gap-2">
                                 <div className="w-8 h-8 rounded-full bg-[var(--primary-500)] flex items-center justify-center">
