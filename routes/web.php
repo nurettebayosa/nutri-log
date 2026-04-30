@@ -18,7 +18,6 @@ Route::get('/akses', function () {
     return Inertia::render('Auth/AccessRequest');
 })->name('access-request');
 
-// KUMPULAN HALAMAN YANG WAJIB LOGIN
 Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/dashboard', function () {
@@ -32,8 +31,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/blok', function () {
         return Inertia::render('Blocks/Index');
     })->name('blocks.index');
-
-    // === TAMBAHAN 4 ROUTES BARU DARI BATCH 2 ===
 
     Route::get('/laporan', function () {
         return Inertia::render('Reports/Index');
@@ -51,9 +48,36 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return Inertia::render('Pump/Control');
     })->name('pump.control');
 
+    Route::get('/maintenance', function () {
+        return Inertia::render('Maintenance/Journal');
+    })->name('maintenance.journal');
+
+    Route::get('/notifikasi', function () {
+        return Inertia::render('Notifications/Index');
+    })->name('notifications.index');
+
+    Route::get('/threshold', function () {
+        return Inertia::render('Settings/Threshold');
+    })->name('settings.threshold');
+
+    Route::get('/tampilan', function () {
+        return Inertia::render('Settings/Display');
+    })->name('settings.display');
+
+    Route::get('/kelola-pengguna', function () {
+        return Inertia::render('Admin/Users');
+    })->name('admin.users');
+
+    Route::get('/permintaan-akses', function () {
+        return Inertia::render('Admin/AccessRequests');
+    })->name('admin.access-requests');
+
+    Route::get('/log-aktivitas', function () {
+        return Inertia::render('Admin/ActivityLog');
+    })->name('admin.activity-log');
+
 });
 
-// KUMPULAN HALAMAN PROFILE BAWAAN BREEZE
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
