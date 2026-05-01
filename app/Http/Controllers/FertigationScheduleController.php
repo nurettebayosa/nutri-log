@@ -6,7 +6,7 @@ use App\Models\ActivityLog;
 use App\Models\FertigationLog;
 use App\Models\FertigationSchedule;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class FertigationScheduleController extends Controller
@@ -22,22 +22,22 @@ class FertigationScheduleController extends Controller
             ->get()
             ->map(function ($log) use ($now) {
                 // Tentukan status display
-                $displayStatus = $log['status'];
-                if ($displayStatus === 'pending' && $log['scheduled_at']->gt($now)) {
+                $displayStatus = $log->status;
+                if ($displayStatus === 'pending' && $log->scheduled_at->gt($now)) {
                     $displayStatus = 'belum-waktunya';
                 }
 
                 return [
-                    'id' => $log['id'],
-                    'time' => $log['scheduled_at']->format('H:i'),
-                    'block_id' => $log['block_id'],
+                    'id' => $log->id,
+                    'time' => $log->scheduled_at->format('H:i'),
+                    'block_id' => $log->block_id,
                     'block_name' => $log->block->name ?? '-',
                     'block_code' => $log->block->code ?? '-',
                     'target_ppm' => $log->schedule->target_ppm ?? 1100,
-                    'actual_ppm' => $log['actual_ppm'],
+                    'actual_ppm' => $log->actual_ppm,
                     'status' => $displayStatus,
                     'executor_name' => $log->executor->name ?? null,
-                    'executed_at' => $log['executed_at'] ? $log['executed_at']->format('H:i') : null,
+                    'executed_at' => $log->executed_at ? $log->executed_at->format('H:i') : null,
                 ];
             });
 
@@ -50,17 +50,14 @@ class FertigationScheduleController extends Controller
             ->map(function ($items) {
                 $first = $items->first();
                 return [
-                    'block_id' => $first['block_id'],
+                    'block_id' => $first->block_id,
                     'block_name' => $first->block->name ?? '-',
                     'is_active' => $items->where('is_active', true)->count() > 0,
-                    // FIX: Pakai gaya Array biar Intelephense mingkem
-                    'slots' => $items->map(function ($s) {
-                        return [
-                            'id' => $s['id'],
-                            'time' => substr($s['time_of_day'], 0, 5),
-                            'target_ppm' => $s['target_ppm'],
-                        ];
-                    })->values(),
+                    'slots' => $items->map(fn ($s) => [
+                        'id' => $s->id,
+                        'time' => substr($s->time_of_day, 0, 5),
+                        'target_ppm' => $s->target_ppm,
+                    ])->values(),
                 ];
             })
             ->values();
@@ -81,14 +78,14 @@ class FertigationScheduleController extends Controller
         /** @var \App\Models\FertigationLog $log */
         $log = FertigationLog::findOrFail($logId);
 
-        if ($log['status'] === 'done') {
+        if ($log->status === 'done') {
             return back()->with('error', 'Jadwal ini sudah ditandai selesai sebelumnya.');
         }
 
         $log->update([
             'status' => 'done',
             'executed_at' => now(),
-            'executed_by' => auth()->id(),
+            'executed_by' => Auth::id(), // <-- INI BIANG KEROKNYA UDAH DI-FIX
             'actual_ppm' => $request->actual_ppm,
             'notes' => $request->notes,
         ]);
@@ -96,8 +93,8 @@ class FertigationScheduleController extends Controller
         ActivityLog::record(
             'TANDAI_FERTIGASI',
             'FertigationLog',
-            $log['id'],
-            "Menandai fertigasi {$log['scheduled_at']->format('H:i')} Blok {$log->block->code} selesai",
+            $log->id,
+            "Menandai fertigasi {$log->scheduled_at->format('H:i')} Blok {$log->block->code} selesai",
             null,
             ['actual_ppm' => $request->actual_ppm]
         );
