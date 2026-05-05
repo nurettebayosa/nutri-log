@@ -1,7 +1,18 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
-use Illuminate\Foundation\Application;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\SensorHistoryController;
+use App\Http\Controllers\BlockController;
+use App\Http\Controllers\FertigationScheduleController;
+use App\Http\Controllers\PumpControlController;
+use App\Http\Controllers\MaintenanceController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ThresholdController;
+use App\Http\Controllers\DisplaySettingController;
+use App\Http\Controllers\Admin\UserManagementController;
+use App\Http\Controllers\Admin\AccessRequestController;
+use App\Http\Controllers\Admin\ActivityLogController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -9,60 +20,55 @@ Route::get('/', function () {
     return redirect()->route('dashboard');
 });
 
-Route::get('/akses', function () {
-    return Inertia::render('Auth/AccessRequest');
-})->name('access-request');
+// PUBLIC: Permintaan Akses (Guest)
+Route::get('/akses', [AccessRequestController::class, 'showForm'])->name('access-request');
+Route::post('/akses', [AccessRequestController::class, 'submit'])->name('access-request.submit');
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
-    // === ROUTES BATCH 1 (UDAH NYAMBUNG CONTROLLER) ===
-    Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
+    // === ROUTE UNTUK SEMUA USER (Karyawan & Owner) ===
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/riwayat-sensor', [SensorHistoryController::class, 'index'])->name('sensor.history');
+    Route::get('/blok', [BlockController::class, 'index'])->name('blocks.index');
+    Route::get('/blok/{id}', [BlockController::class, 'show'])->name('blocks.show');
 
-    Route::get('/riwayat-sensor', [\App\Http\Controllers\SensorHistoryController::class, 'index'])->name('sensor.history');
+    Route::get('/jadwal-fertigasi', [FertigationScheduleController::class, 'index'])->name('fertigation.schedule');
+    Route::post('/jadwal-fertigasi/{logId}/done', [FertigationScheduleController::class, 'markDone'])->name('fertigation.markDone');
 
-    Route::get('/blok', [\App\Http\Controllers\BlockController::class, 'index'])->name('blocks.index');
-    Route::get('/blok/{id}', [\App\Http\Controllers\BlockController::class, 'show'])->name('blocks.show');
+    Route::get('/kontrol-pompa', [PumpControlController::class, 'index'])->name('pump.control');
+    Route::post('/kontrol-pompa/{blockId}/toggle', [PumpControlController::class, 'toggle'])->name('pump.toggle');
 
-    Route::get('/jadwal-fertigasi', [\App\Http\Controllers\FertigationScheduleController::class, 'index'])->name('fertigation.schedule');
-    Route::post('/jadwal-fertigasi/{logId}/done', [\App\Http\Controllers\FertigationScheduleController::class, 'markDone'])->name('fertigation.markDone');
+    Route::get('/maintenance', [MaintenanceController::class, 'index'])->name('maintenance.journal');
+    Route::post('/maintenance', [MaintenanceController::class, 'store'])->name('maintenance.store');
+    Route::delete('/maintenance/{id}', [MaintenanceController::class, 'destroy'])->name('maintenance.destroy');
 
-    // === ROUTES STUB (BELUM ADA CONTROLLERNYA) ===
+    Route::get('/notifikasi', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifikasi/{id}/resolve', [NotificationController::class, 'resolve'])->name('notifications.resolve');
+    Route::post('/notifikasi/{id}/ignore', [NotificationController::class, 'ignore'])->name('notifications.ignore');
+
+    Route::get('/tampilan', [DisplaySettingController::class, 'index'])->name('settings.display');
+    Route::patch('/tampilan', [DisplaySettingController::class, 'update'])->name('settings.display.update');
+
     Route::get('/laporan', function () {
         return Inertia::render('Reports/Index');
     })->name('reports.index');
 
-    Route::get('/kontrol-pompa', function () {
-        return Inertia::render('Pump/Control');
-    })->name('pump.control');
+    // === ROUTE KHUSUS OWNER (OWNER-ONLY) ===
+    Route::middleware('owner')->group(function () {
+        Route::get('/threshold', [ThresholdController::class, 'index'])->name('settings.threshold');
+        Route::post('/threshold/{blockId}/{sensorType}', [ThresholdController::class, 'update'])->name('settings.threshold.update');
 
-    Route::get('/maintenance', function () {
-        return Inertia::render('Maintenance/Journal');
-    })->name('maintenance.journal');
+        Route::get('/kelola-pengguna', [UserManagementController::class, 'index'])->name('admin.users');
+        Route::post('/kelola-pengguna', [UserManagementController::class, 'store'])->name('admin.users.store');
+        Route::patch('/kelola-pengguna/{id}', [UserManagementController::class, 'update'])->name('admin.users.update');
+        Route::delete('/kelola-pengguna/{id}', [UserManagementController::class, 'destroy'])->name('admin.users.destroy');
 
-    Route::get('/notifikasi', function () {
-        return Inertia::render('Notifications/Index');
-    })->name('notifications.index');
+        Route::get('/permintaan-akses', [AccessRequestController::class, 'index'])->name('admin.access-requests');
+        Route::post('/permintaan-akses/{id}/approve', [AccessRequestController::class, 'approve'])->name('admin.access-requests.approve');
+        Route::post('/permintaan-akses/{id}/reject', [AccessRequestController::class, 'reject'])->name('admin.access-requests.reject');
 
-    Route::get('/threshold', function () {
-        return Inertia::render('Settings/Threshold');
-    })->name('settings.threshold');
-
-    Route::get('/tampilan', function () {
-        return Inertia::render('Settings/Display');
-    })->name('settings.display');
-
-    Route::get('/kelola-pengguna', function () {
-        return Inertia::render('Admin/Users');
-    })->name('admin.users');
-
-    Route::get('/permintaan-akses', function () {
-        return Inertia::render('Admin/AccessRequests');
-    })->name('admin.access-requests');
-
-    Route::get('/log-aktivitas', function () {
-        return Inertia::render('Admin/ActivityLog');
-    })->name('admin.activity-log');
-
+        Route::get('/log-aktivitas', [ActivityLogController::class, 'index'])->name('admin.activity-log');
+    });
 });
 
 Route::middleware('auth')->group(function () {

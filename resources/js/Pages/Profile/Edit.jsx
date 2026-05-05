@@ -1,15 +1,41 @@
-import { Head, usePage } from '@inertiajs/react';
+import { Head, useForm, usePage, Link } from '@inertiajs/react';
 import { Upload, LogOut } from 'lucide-react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
 
-export default function ProfileEdit() {
-    const { auth } = usePage().props;
-    const user = auth?.user;
+export default function ProfileEdit({ mustVerifyEmail, status, user }) {
     const userName = user?.name ?? 'User';
-    const userEmail = user?.email ?? '-';
-    const userRole = user?.role ?? 'karyawan';
-    const initials =
-        userName.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase() || 'U';
+    const initials = userName.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase() || 'U';
+
+    // Form 1: Update profile info
+    const profileForm = useForm({
+        name: user?.name ?? '',
+        email: user?.email ?? '',
+        wa_number: user?.wa_number ?? '',
+    });
+
+    const submitProfile = (e) => {
+        e.preventDefault();
+        profileForm.patch('/profile', { preserveScroll: true });
+    };
+
+    // Form 2: Update password
+    const passwordForm = useForm({
+        current_password: '',
+        password: '',
+        password_confirmation: '',
+    });
+
+    const submitPassword = (e) => {
+        e.preventDefault();
+        passwordForm.put('/password', {
+            preserveScroll: true,
+            onSuccess: () => passwordForm.reset(),
+            onError: () => {
+                if (passwordForm.errors.password) passwordForm.reset('password', 'password_confirmation');
+                if (passwordForm.errors.current_password) passwordForm.reset('current_password');
+            },
+        });
+    };
 
     return (
         <DashboardLayout>
@@ -20,8 +46,20 @@ export default function ProfileEdit() {
                     <p className="text-sm text-[var(--neutral-600)]">Edit info pribadi & ganti password</p>
                 </div>
 
+                {/* Status flash */}
+                {status === 'profile-updated' && (
+                    <div className="p-3 bg-[var(--success)]/10 border border-[var(--success)]/30 rounded-lg text-sm text-[var(--success)]">
+                        ✓ Profil berhasil diperbarui.
+                    </div>
+                )}
+                {status === 'password-updated' && (
+                    <div className="p-3 bg-[var(--success)]/10 border border-[var(--success)]/30 rounded-lg text-sm text-[var(--success)]">
+                        ✓ Password berhasil diubah.
+                    </div>
+                )}
+
                 {/* Profile Info */}
-                <div className="bg-white border border-[var(--neutral-200)] rounded-xl p-6">
+                <form onSubmit={submitProfile} className="bg-white border border-[var(--neutral-200)] rounded-xl p-6">
                     <h3 className="font-semibold text-[var(--neutral-900)] mb-4">Informasi Profil</h3>
 
                     <div className="flex items-start gap-6 mb-6 flex-wrap">
@@ -29,7 +67,12 @@ export default function ProfileEdit() {
                             <div className="w-24 h-24 rounded-full bg-[var(--primary-200)] flex items-center justify-center">
                                 <span className="text-3xl font-bold text-[var(--primary-700)]">{initials}</span>
                             </div>
-                            <button className="mt-3 w-24 px-3 py-1.5 text-xs bg-white border border-[var(--neutral-300)] rounded-lg hover:bg-[var(--neutral-50)] flex items-center justify-center gap-1">
+                            <button
+                                type="button"
+                                disabled
+                                className="mt-3 w-24 px-3 py-1.5 text-xs bg-white border border-[var(--neutral-300)] rounded-lg flex items-center justify-center gap-1 opacity-50 cursor-not-allowed"
+                                title="Upload avatar belum tersedia"
+                            >
                                 <Upload className="w-3 h-3" />
                                 Upload
                             </button>
@@ -37,97 +80,139 @@ export default function ProfileEdit() {
 
                         <div className="flex-1 min-w-[250px] space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-[var(--neutral-700)] mb-1">Nama Lengkap</label>
+                                <label className="block text-sm font-medium text-[var(--neutral-700)] mb-1">Nama Lengkap *</label>
                                 <input
                                     type="text"
-                                    defaultValue={userName}
+                                    value={profileForm.data.name}
+                                    onChange={(e) => profileForm.setData('name', e.target.value)}
+                                    required
                                     className="w-full px-4 py-2.5 border border-[var(--neutral-300)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-500)]"
                                 />
+                                {profileForm.errors.name && <p className="text-xs text-[var(--danger)] mt-1">{profileForm.errors.name}</p>}
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-[var(--neutral-700)] mb-1">Email</label>
+                                <label className="block text-sm font-medium text-[var(--neutral-700)] mb-1">Email *</label>
                                 <input
                                     type="email"
-                                    defaultValue={userEmail}
+                                    value={profileForm.data.email}
+                                    onChange={(e) => profileForm.setData('email', e.target.value)}
+                                    required
                                     className="w-full px-4 py-2.5 border border-[var(--neutral-300)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-500)]"
                                 />
+                                {profileForm.errors.email && <p className="text-xs text-[var(--danger)] mt-1">{profileForm.errors.email}</p>}
+                                {mustVerifyEmail && user.email_verified_at === null && (
+                                    <p className="text-xs text-[var(--warning)] mt-1">
+                                        Email belum diverifikasi.{' '}
+                                        <Link href={route('verification.send')} method="post" as="button" className="underline">
+                                            Kirim ulang verifikasi
+                                        </Link>
+                                    </p>
+                                )}
                             </div>
 
                             <div>
                                 <label className="block text-sm font-medium text-[var(--neutral-700)] mb-1">No. WhatsApp</label>
                                 <input
                                     type="tel"
+                                    value={profileForm.data.wa_number}
+                                    onChange={(e) => profileForm.setData('wa_number', e.target.value)}
                                     placeholder="08xxxxxxxxxx"
                                     className="w-full px-4 py-2.5 border border-[var(--neutral-300)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-500)]"
                                 />
+                                {profileForm.errors.wa_number && <p className="text-xs text-[var(--danger)] mt-1">{profileForm.errors.wa_number}</p>}
                             </div>
 
                             <div>
                                 <label className="block text-sm font-medium text-[var(--neutral-700)] mb-1">Role</label>
                                 <div className="px-4 py-2.5 bg-[var(--neutral-50)] border border-[var(--neutral-200)] rounded-lg">
                                     <span className="px-3 py-1 bg-[var(--primary-50)] text-[var(--primary-700)] text-sm rounded-full capitalize">
-                                        {userRole}
+                                        {user?.role ?? 'karyawan'}
                                     </span>
                                 </div>
+                                <p className="text-xs text-[var(--neutral-500)] mt-1">
+                                    Role hanya bisa diubah oleh owner via halaman Kelola Pengguna.
+                                </p>
                             </div>
 
-                            <button className="px-4 py-2 bg-[var(--primary-500)] text-white rounded-lg hover:bg-[var(--primary-600)] text-sm">
-                                Simpan Perubahan
+                            <button
+                                type="submit"
+                                disabled={profileForm.processing}
+                                className="px-4 py-2 bg-[var(--primary-500)] text-white rounded-lg hover:bg-[var(--primary-600)] text-sm disabled:opacity-50"
+                            >
+                                {profileForm.processing ? 'Menyimpan...' : 'Simpan Perubahan'}
                             </button>
                         </div>
                     </div>
-                </div>
+                </form>
 
                 {/* Change Password */}
-                <div className="bg-white border border-[var(--neutral-200)] rounded-xl p-6">
+                <form onSubmit={submitPassword} className="bg-white border border-[var(--neutral-200)] rounded-xl p-6">
                     <h3 className="font-semibold text-[var(--neutral-900)] mb-4">Ganti Password</h3>
 
                     <div className="space-y-4 max-w-md">
                         <div>
-                            <label className="block text-sm font-medium text-[var(--neutral-700)] mb-1">Password Lama</label>
-                            <input type="password" placeholder="••••••••" className="w-full px-4 py-2.5 border border-[var(--neutral-300)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-500)]" />
+                            <label className="block text-sm font-medium text-[var(--neutral-700)] mb-1">Password Lama *</label>
+                            <input
+                                type="password"
+                                value={passwordForm.data.current_password}
+                                onChange={(e) => passwordForm.setData('current_password', e.target.value)}
+                                autoComplete="current-password"
+                                placeholder="••••••••"
+                                className="w-full px-4 py-2.5 border border-[var(--neutral-300)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-500)]"
+                            />
+                            {passwordForm.errors.current_password && (
+                                <p className="text-xs text-[var(--danger)] mt-1">{passwordForm.errors.current_password}</p>
+                            )}
                         </div>
+
                         <div>
-                            <label className="block text-sm font-medium text-[var(--neutral-700)] mb-1">Password Baru</label>
-                            <input type="password" placeholder="••••••••" className="w-full px-4 py-2.5 border border-[var(--neutral-300)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-500)]" />
+                            <label className="block text-sm font-medium text-[var(--neutral-700)] mb-1">Password Baru *</label>
+                            <input
+                                type="password"
+                                value={passwordForm.data.password}
+                                onChange={(e) => passwordForm.setData('password', e.target.value)}
+                                autoComplete="new-password"
+                                placeholder="••••••••"
+                                className="w-full px-4 py-2.5 border border-[var(--neutral-300)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-500)]"
+                            />
+                            {passwordForm.errors.password && (
+                                <p className="text-xs text-[var(--danger)] mt-1">{passwordForm.errors.password}</p>
+                            )}
                         </div>
+
                         <div>
-                            <label className="block text-sm font-medium text-[var(--neutral-700)] mb-1">Konfirmasi Password Baru</label>
-                            <input type="password" placeholder="••••••••" className="w-full px-4 py-2.5 border border-[var(--neutral-300)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-500)]" />
+                            <label className="block text-sm font-medium text-[var(--neutral-700)] mb-1">Konfirmasi Password Baru *</label>
+                            <input
+                                type="password"
+                                value={passwordForm.data.password_confirmation}
+                                onChange={(e) => passwordForm.setData('password_confirmation', e.target.value)}
+                                autoComplete="new-password"
+                                placeholder="••••••••"
+                                className="w-full px-4 py-2.5 border border-[var(--neutral-300)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-500)]"
+                            />
                         </div>
-                        <button className="px-4 py-2 bg-[var(--primary-500)] text-white rounded-lg hover:bg-[var(--primary-600)] text-sm">
-                            Ubah Password
+
+                        <button
+                            type="submit"
+                            disabled={passwordForm.processing}
+                            className="px-4 py-2 bg-[var(--primary-500)] text-white rounded-lg hover:bg-[var(--primary-600)] text-sm disabled:opacity-50"
+                        >
+                            {passwordForm.processing ? 'Memproses...' : 'Ubah Password'}
                         </button>
                     </div>
-                </div>
+                </form>
 
-                {/* Active Sessions */}
+                {/* Active Sessions — placeholder, real implementation butuh package laravel-sessions-tracker */}
                 <div className="bg-white border border-[var(--neutral-200)] rounded-xl p-6">
-                    <h3 className="font-semibold text-[var(--neutral-900)] mb-4">Sesi Aktif</h3>
-
-                    <div className="space-y-3">
-                        <div className="flex items-center justify-between p-4 bg-[var(--neutral-50)] rounded-lg flex-wrap gap-2">
-                            <div className="flex-1 min-w-[200px]">
-                                <div className="font-medium text-sm text-[var(--neutral-900)] mb-1">💻 Chrome di Windows · Jakarta</div>
-                                <div className="text-xs text-[var(--neutral-600)]">Sesi saat ini · IP: 36.79.x.x · Login: 30/04 08:14</div>
-                            </div>
-                            <span className="px-3 py-1 bg-[var(--success)]/10 text-[var(--success)] text-xs rounded-full">Aktif</span>
-                        </div>
-
-                        <div className="flex items-center justify-between p-4 bg-[var(--neutral-50)] rounded-lg flex-wrap gap-2">
-                            <div className="flex-1 min-w-[200px]">
-                                <div className="font-medium text-sm text-[var(--neutral-900)] mb-1">📱 Safari di iPhone · Subang</div>
-                                <div className="text-xs text-[var(--neutral-600)]">IP: 192.168.1.x · Login: 25/04 19:30</div>
-                            </div>
-                            <button className="px-3 py-1 text-xs text-[var(--danger)] hover:bg-[var(--danger)]/5 rounded-lg">Logout</button>
-                        </div>
+                    <h3 className="font-semibold text-[var(--neutral-900)] mb-2">Sesi Aktif</h3>
+                    <p className="text-xs text-[var(--neutral-500)] mb-4 italic">
+                        Fitur tracking sesi akan diaktifkan di iterasi berikutnya.
+                    </p>
+                    <div className="p-4 bg-[var(--neutral-50)] rounded-lg">
+                        <div className="font-medium text-sm text-[var(--neutral-900)] mb-1">💻 Browser saat ini</div>
+                        <div className="text-xs text-[var(--neutral-600)]">Sesi aktif</div>
                     </div>
-
-                    <button className="mt-4 px-4 py-2 bg-white border border-[var(--danger)] text-[var(--danger)] rounded-lg hover:bg-[var(--danger)]/5 text-sm flex items-center gap-2">
-                        <LogOut className="w-4 h-4" />
-                        Logout dari semua device lain
-                    </button>
                 </div>
             </div>
         </DashboardLayout>

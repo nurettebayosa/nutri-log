@@ -1,50 +1,21 @@
-import { Head, usePage } from '@inertiajs/react';
+import { Head, useForm, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Trash2 } from 'lucide-react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
 
-export default function MaintenanceJournal() {
-    const { auth } = usePage().props;
-    const userRole = auth?.user?.role ?? 'karyawan';
+export default function MaintenanceJournal({ blocks = [], entries = [], filters = {} }) {
     const [showModal, setShowModal] = useState(false);
 
-    const entries = [
-        {
-            tanggal: '26/04 12:14',
-            penulis: 'Pak Tedi',
-            kategori: 'Pemupukan / Fertigasi',
-            blok: ['Blok A1'],
-            deskripsi: 'Fertigasi siang dilakukan, ppm aktual terbaca 1,085. Target 1,100. Sedikit di bawah target tapi masih dalam toleransi.',
-            foto: false,
-        },
-        {
-            tanggal: '26/04 09:30',
-            penulis: 'Pak Tedi',
-            kategori: 'Hama',
-            blok: ['Blok B1'],
-            deskripsi: 'Ditemukan kutu daun (aphid) di 3 polybag sisi timur. Sudah disemprot neem oil. Perlu monitor 3 hari ke depan.',
-            foto: true,
-        },
-        {
-            tanggal: '25/04 06:00',
-            penulis: 'Pak Kiki',
-            kategori: 'Panen',
-            blok: ['Blok C1'],
-            deskripsi: 'Panen pakcoy siklus 2026-03 selesai. Total 18 kg dari 250 polybag. Kualitas A: daun besar, tidak bolong-bolong. Sudah masuk kontainer pengiriman ke Hypermart.',
-            foto: false,
-        },
-        {
-            tanggal: '25/04 14:00',
-            penulis: 'Pak Tedi',
-            kategori: 'Pruning',
-            blok: ['Blok A2'],
-            deskripsi: 'Pruning daun bawah 50 polybag, membersihkan daun yang menguning di pinggir.',
-            foto: false,
-        },
-    ];
+    const { data, setData, post, processing, errors, reset } = useForm({
+        category: 'fertigasi',
+        title: '',
+        description: '',
+        occurred_at: new Date().toISOString().slice(0, 16),
+        block_ids: [],
+    });
 
     const categories = [
-        { id: 'pemupukan', label: 'Pemupukan / Fertigasi', icon: '💧' },
+        { id: 'fertigasi', label: 'Pemupukan / Fertigasi', icon: '💧' },
         { id: 'hama', label: 'Hama', icon: '🐛' },
         { id: 'penyakit', label: 'Penyakit', icon: '🤒' },
         { id: 'panen', label: 'Panen', icon: '🌾' },
@@ -52,6 +23,35 @@ export default function MaintenanceJournal() {
         { id: 'alat', label: 'Maintenance Alat', icon: '🔧' },
         { id: 'lainnya', label: 'Lainnya', icon: '📝' },
     ];
+
+    const handleFilterChange = (key, value) => {
+        router.get('/maintenance', { ...filters, [key]: value }, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
+
+    const submitNew = (e) => {
+        e.preventDefault();
+        post('/maintenance', {
+            preserveScroll: true,
+            onSuccess: () => {
+                setShowModal(false);
+                reset();
+            },
+        });
+    };
+
+    const toggleBlock = (id) => {
+        setData('block_ids', data.block_ids.includes(id)
+            ? data.block_ids.filter(b => b !== id)
+            : [...data.block_ids, id]);
+    };
+
+    const handleDelete = (id) => {
+        if (!confirm('Yakin ingin menghapus catatan ini?')) return;
+        router.delete(`/maintenance/${id}`, { preserveScroll: true });
+    };
 
     return (
         <DashboardLayout>
@@ -81,88 +81,101 @@ export default function MaintenanceJournal() {
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--neutral-500)]" />
                                 <input
                                     type="text"
-                                    placeholder="Cari keyword..."
+                                    defaultValue={filters.search}
+                                    onBlur={(e) => handleFilterChange('search', e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleFilterChange('search', e.target.value)}
+                                    placeholder="Cari keyword (tekan Enter)..."
                                     className="w-full pl-10 pr-4 py-2 text-sm border border-[var(--neutral-300)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-500)]"
                                 />
                             </div>
                         </div>
 
-                        <select className="px-3 py-2 text-sm border border-[var(--neutral-300)] rounded-lg">
-                            <option>Semua Kategori</option>
-                            {categories.map((cat) => (
-                                <option key={cat.id}>
-                                    {cat.icon} {cat.label}
-                                </option>
+                        <select
+                            value={filters.category}
+                            onChange={(e) => handleFilterChange('category', e.target.value)}
+                            className="px-3 py-2 text-sm border border-[var(--neutral-300)] rounded-lg"
+                        >
+                            <option value="">Semua Kategori</option>
+                            {categories.map(c => (
+                                <option key={c.id} value={c.id}>{c.icon} {c.label}</option>
                             ))}
                         </select>
 
-                        <select className="px-3 py-2 text-sm border border-[var(--neutral-300)] rounded-lg">
-                            <option>Semua Blok</option>
-                            <option>Blok A1</option>
-                            <option>Blok A2</option>
-                            <option>Blok A3</option>
-                            <option>Blok B1</option>
+                        <select
+                            value={filters.block_id}
+                            onChange={(e) => handleFilterChange('block_id', e.target.value)}
+                            className="px-3 py-2 text-sm border border-[var(--neutral-300)] rounded-lg"
+                        >
+                            <option value="">Semua Blok</option>
+                            {blocks.map(b => (
+                                <option key={b.id} value={b.id}>{b.name}</option>
+                            ))}
                         </select>
 
-                        <input type="date" className="px-3 py-2 text-sm border border-[var(--neutral-300)] rounded-lg" />
+                        <input
+                            type="date"
+                            value={filters.date}
+                            onChange={(e) => handleFilterChange('date', e.target.value)}
+                            className="px-3 py-2 text-sm border border-[var(--neutral-300)] rounded-lg"
+                        />
                     </div>
                 </div>
 
-                {/* Timeline View */}
+                {/* Timeline */}
                 <div className="space-y-4">
-                    {entries.map((entry, idx) => (
-                        <div key={idx} className="bg-white border border-[var(--neutral-200)] rounded-xl p-5">
-                            <div className="flex items-start gap-4">
-                                <div className="w-10 h-10 rounded-full bg-[var(--primary-200)] flex items-center justify-center flex-shrink-0">
-                                    <span className="text-sm font-semibold text-[var(--primary-700)]">
-                                        {entry.penulis.split(' ').map((n) => n[0]).join('')}
-                                    </span>
-                                </div>
-
-                                <div className="flex-1">
-                                    <div className="flex items-start justify-between mb-2 flex-wrap gap-2">
-                                        <div>
-                                            <div className="flex items-center gap-3 mb-1 flex-wrap">
-                                                <span className="font-semibold text-[var(--neutral-900)]">{entry.penulis}</span>
-                                                <span className="text-xs text-[var(--neutral-500)]">{entry.tanggal}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2 flex-wrap">
-                                                <span className="px-2 py-0.5 bg-[var(--primary-50)] text-[var(--primary-700)] text-xs rounded-full">
-                                                    {entry.kategori}
-                                                </span>
-                                                {entry.blok.map((b) => (
-                                                    <span key={b} className="px-2 py-0.5 bg-[var(--neutral-100)] text-[var(--neutral-700)] text-xs rounded-full">
-                                                        {b}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </div>
+                    {entries.length === 0 ? (
+                        <div className="bg-white border border-[var(--neutral-200)] rounded-xl p-12 text-center">
+                            <p className="text-sm text-[var(--neutral-600)]">Belum ada catatan maintenance.</p>
+                        </div>
+                    ) : (
+                        entries.map((entry) => (
+                            <div key={entry.id} className="bg-white border border-[var(--neutral-200)] rounded-xl p-5">
+                                <div className="flex items-start gap-4">
+                                    <div className="w-10 h-10 rounded-full bg-[var(--primary-200)] flex items-center justify-center flex-shrink-0">
+                                        <span className="text-sm font-semibold text-[var(--primary-700)]">
+                                            {entry.user_name.split(' ').map(n => n[0]).slice(0, 2).join('')}
+                                        </span>
                                     </div>
 
-                                    <p className="text-sm text-[var(--neutral-700)] mb-3">{entry.deskripsi}</p>
-
-                                    {entry.foto && (
-                                        <div className="flex gap-2 mb-3">
-                                            <div className="w-20 h-20 bg-[var(--neutral-100)] rounded-lg flex items-center justify-center">
-                                                <span className="text-xs text-[var(--neutral-500)]">[Foto]</span>
-                                            </div>
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-3 mb-1 flex-wrap">
+                                            <span className="font-semibold text-[var(--neutral-900)]">{entry.user_name}</span>
+                                            <span className="text-xs text-[var(--neutral-500)]">{entry.occurred_at}</span>
                                         </div>
-                                    )}
+                                        <div className="flex items-center gap-2 flex-wrap mb-2">
+                                            <span className="px-2 py-0.5 bg-[var(--primary-50)] text-[var(--primary-700)] text-xs rounded-full">
+                                                {entry.category_label}
+                                            </span>
+                                            {entry.block_names.map((bn, idx) => (
+                                                <span key={idx} className="px-2 py-0.5 bg-[var(--neutral-100)] text-[var(--neutral-700)] text-xs rounded-full">
+                                                    {bn}
+                                                </span>
+                                            ))}
+                                        </div>
 
-                                    <div className="flex items-center gap-3">
-                                        <button className="text-xs text-[var(--neutral-600)] hover:text-[var(--primary-500)]">
-                                            Edit
-                                        </button>
-                                        {(userRole === 'owner' || entry.penulis === 'Pak Tedi') && (
-                                            <button className="text-xs text-[var(--danger)] hover:text-[var(--danger)]/80">
+                                        {entry.title && <p className="font-medium text-sm text-[var(--neutral-900)] mb-1">{entry.title}</p>}
+                                        <p className="text-sm text-[var(--neutral-700)] mb-3">{entry.description}</p>
+
+                                        {entry.photo_count > 0 && (
+                                            <div className="text-xs text-[var(--neutral-500)] mb-3">
+                                                📸 {entry.photo_count} foto terlampir
+                                            </div>
+                                        )}
+
+                                        {entry.can_delete && (
+                                            <button
+                                                onClick={() => handleDelete(entry.id)}
+                                                className="text-xs text-[var(--danger)] hover:text-[var(--danger)]/80 flex items-center gap-1"
+                                            >
+                                                <Trash2 className="w-3 h-3" />
                                                 Hapus
                                             </button>
                                         )}
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        ))
+                    )}
                 </div>
             </div>
 
@@ -172,72 +185,92 @@ export default function MaintenanceJournal() {
                     <div className="bg-white rounded-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
                         <h3 className="text-lg font-bold text-[var(--neutral-900)] mb-4">Tambah Catatan Baru</h3>
 
-                        <form
-                            className="space-y-4"
-                            onSubmit={(e) => {
-                                e.preventDefault();
-                                setShowModal(false);
-                            }}
-                        >
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-sm font-medium text-[var(--neutral-700)] mb-1">Tanggal</label>
-                                    <input type="date" defaultValue="2026-04-30" className="w-full px-3 py-2 text-sm border border-[var(--neutral-300)] rounded-lg" />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-[var(--neutral-700)] mb-1">Waktu</label>
-                                    <input type="time" defaultValue="08:14" className="w-full px-3 py-2 text-sm border border-[var(--neutral-300)] rounded-lg" />
-                                </div>
+                        <form onSubmit={submitNew} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-[var(--neutral-700)] mb-1">Tanggal & Waktu</label>
+                                <input
+                                    type="datetime-local"
+                                    value={data.occurred_at}
+                                    onChange={(e) => setData('occurred_at', e.target.value)}
+                                    required
+                                    className="w-full px-3 py-2 text-sm border border-[var(--neutral-300)] rounded-lg"
+                                />
+                                {errors.occurred_at && <p className="text-xs text-[var(--danger)] mt-1">{errors.occurred_at}</p>}
                             </div>
 
                             <div>
                                 <label className="block text-sm font-medium text-[var(--neutral-700)] mb-1">Kategori</label>
                                 <div className="grid grid-cols-2 gap-2">
-                                    {categories.map((cat) => (
+                                    {categories.map(cat => (
                                         <label
                                             key={cat.id}
-                                            className="flex items-center gap-2 p-3 border border-[var(--neutral-300)] rounded-lg cursor-pointer hover:bg-[var(--neutral-50)]"
+                                            className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-[var(--neutral-50)] ${
+                                                data.category === cat.id
+                                                    ? 'border-[var(--primary-500)] bg-[var(--primary-50)]'
+                                                    : 'border-[var(--neutral-300)]'
+                                            }`}
                                         >
-                                            <input type="radio" name="kategori" className="w-4 h-4" />
-                                            <span className="text-sm">
-                                                {cat.icon} {cat.label}
-                                            </span>
+                                            <input
+                                                type="radio"
+                                                name="category"
+                                                value={cat.id}
+                                                checked={data.category === cat.id}
+                                                onChange={(e) => setData('category', e.target.value)}
+                                                className="w-4 h-4"
+                                            />
+                                            <span className="text-sm">{cat.icon} {cat.label}</span>
                                         </label>
                                     ))}
                                 </div>
+                                {errors.category && <p className="text-xs text-[var(--danger)] mt-1">{errors.category}</p>}
                             </div>
 
                             <div>
                                 <label className="block text-sm font-medium text-[var(--neutral-700)] mb-1">Blok terkait</label>
                                 <div className="flex flex-wrap gap-2">
-                                    {['Blok A1', 'Blok A2', 'Blok A3', 'Blok B1'].map((b) => (
+                                    {blocks.map(b => (
                                         <label
-                                            key={b}
-                                            className="inline-flex items-center gap-2 px-3 py-1.5 border border-[var(--neutral-300)] rounded-full cursor-pointer hover:bg-[var(--neutral-50)] text-sm"
+                                            key={b.id}
+                                            className={`inline-flex items-center gap-2 px-3 py-1.5 border rounded-full cursor-pointer text-sm ${
+                                                data.block_ids.includes(b.id)
+                                                    ? 'border-[var(--primary-500)] bg-[var(--primary-50)] text-[var(--primary-700)]'
+                                                    : 'border-[var(--neutral-300)] hover:bg-[var(--neutral-50)]'
+                                            }`}
                                         >
-                                            <input type="checkbox" className="w-4 h-4" />
-                                            {b}
+                                            <input
+                                                type="checkbox"
+                                                checked={data.block_ids.includes(b.id)}
+                                                onChange={() => toggleBlock(b.id)}
+                                                className="w-4 h-4"
+                                            />
+                                            {b.name}
                                         </label>
                                     ))}
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-[var(--neutral-700)] mb-1">Deskripsi</label>
-                                <textarea
-                                    rows={4}
-                                    placeholder="Sertakan detail apa yang dilihat dan tindakan yang diambil..."
-                                    className="w-full px-4 py-2.5 border border-[var(--neutral-300)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-500)] resize-none"
+                                <label className="block text-sm font-medium text-[var(--neutral-700)] mb-1">Judul (opsional)</label>
+                                <input
+                                    type="text"
+                                    value={data.title}
+                                    onChange={(e) => setData('title', e.target.value)}
+                                    placeholder="Singkat dan jelas..."
+                                    className="w-full px-3 py-2 text-sm border border-[var(--neutral-300)] rounded-lg"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-[var(--neutral-700)] mb-1">Foto (max 5)</label>
-                                <div className="border-2 border-dashed border-[var(--neutral-300)] rounded-lg p-6 text-center hover:bg-[var(--neutral-50)] cursor-pointer">
-                                    <div className="text-sm text-[var(--neutral-600)]">
-                                        Drag & drop foto di sini atau klik untuk browse
-                                    </div>
-                                </div>
+                                <label className="block text-sm font-medium text-[var(--neutral-700)] mb-1">Deskripsi *</label>
+                                <textarea
+                                    rows={4}
+                                    value={data.description}
+                                    onChange={(e) => setData('description', e.target.value)}
+                                    placeholder="Sertakan detail apa yang dilihat dan tindakan yang diambil..."
+                                    required
+                                    className="w-full px-4 py-2.5 border border-[var(--neutral-300)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-500)] resize-none"
+                                />
+                                {errors.description && <p className="text-xs text-[var(--danger)] mt-1">{errors.description}</p>}
                             </div>
 
                             <div className="flex items-center gap-3 pt-4">
@@ -250,9 +283,10 @@ export default function MaintenanceJournal() {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="flex-1 py-3 bg-[var(--primary-500)] text-white rounded-lg font-medium hover:bg-[var(--primary-600)]"
+                                    disabled={processing}
+                                    className="flex-1 py-3 bg-[var(--primary-500)] text-white rounded-lg font-medium hover:bg-[var(--primary-600)] disabled:opacity-50"
                                 >
-                                    Simpan
+                                    {processing ? 'Menyimpan...' : 'Simpan'}
                                 </button>
                             </div>
                         </form>

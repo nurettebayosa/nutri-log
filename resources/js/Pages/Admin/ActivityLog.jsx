@@ -1,23 +1,19 @@
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { Search } from 'lucide-react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
 
-export default function AdminActivityLog() {
-    const logs = [
-        { waktu: '30/04 14:32', user: 'Pak Tedi', aksi: 'LOGIN', target: '-', detail: '-', ip: '192.168.1.45' },
-        { waktu: '30/04 12:14', user: 'Pak Tedi', aksi: 'TANDAI_FERTIGASI', target: 'Blok A1 12:00', detail: 'ppm aktual: 1,085', ip: '192.168.1.45' },
-        { waktu: '30/04 11:42', user: 'Pak Tedi', aksi: 'KONTROL_POMPA_ON', target: 'Blok A1', detail: 'manual override (2m 10s)', ip: '192.168.1.45' },
-        { waktu: '30/04 10:00', user: 'Pak Kiki', aksi: 'EDIT_THRESHOLD', target: 'Blok A1 - TDS', detail: 'min: 950→1000', ip: '36.79.x.x' },
-        { waktu: '30/04 09:00', user: 'Pak Kiki', aksi: 'TAMBAH_PENGGUNA', target: 'Pak Andi', detail: 'role: Karyawan', ip: '36.79.x.x' },
-        { waktu: '30/04 08:14', user: 'Pak Kiki', aksi: 'LOGIN', target: '-', detail: '-', ip: '36.79.x.x' },
-        { waktu: '29/04 17:05', user: 'Pak Tedi', aksi: 'TANDAI_FERTIGASI', target: 'Blok A1 17:00', detail: 'ppm aktual: 1,095', ip: '192.168.1.45' },
-        { waktu: '29/04 14:30', user: 'Pak Kiki', aksi: 'EXPORT_LAPORAN', target: 'Stabilitas Nutrisi Blok A1', detail: 'PDF generated', ip: '36.79.x.x' },
-    ];
+export default function AdminActivityLog({ logs, users = [], filters = {} }) {
+    const handleFilterChange = (key, value) => {
+        router.get('/log-aktivitas', { ...filters, [key]: value }, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
 
-    const getAksiColor = (aksi) => {
-        if (aksi === 'LOGIN' || aksi === 'LOGOUT') return 'bg-[var(--info)]/10 text-[var(--info)]';
-        if (aksi.startsWith('KONTROL')) return 'bg-[var(--warning)]/10 text-[var(--warning)]';
-        if (aksi.startsWith('HAPUS')) return 'bg-[var(--danger)]/10 text-[var(--danger)]';
+    const getAksiColor = (action) => {
+        if (action === 'LOGIN' || action === 'LOGOUT') return 'bg-[var(--info)]/10 text-[var(--info)]';
+        if (action.startsWith('KONTROL')) return 'bg-[var(--warning)]/10 text-[var(--warning)]';
+        if (action.startsWith('HAPUS')) return 'bg-[var(--danger)]/10 text-[var(--danger)]';
         return 'bg-[var(--neutral-100)] text-[var(--neutral-700)]';
     };
 
@@ -40,28 +36,44 @@ export default function AdminActivityLog() {
                                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--neutral-500)]" />
                                     <input
                                         type="text"
-                                        placeholder="Cari keyword..."
+                                        defaultValue={filters.search}
+                                        onBlur={(e) => handleFilterChange('search', e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleFilterChange('search', e.target.value)}
+                                        placeholder="Cari keyword (Enter)..."
                                         className="w-full pl-10 pr-4 py-2 text-sm border border-[var(--neutral-300)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-500)]"
                                     />
                                 </div>
                             </div>
 
-                            <select className="px-3 py-2 text-sm border border-[var(--neutral-300)] rounded-lg">
-                                <option>Semua User</option>
-                                <option>Pak Kiki</option>
-                                <option>Pak Tedi</option>
+                            <select
+                                value={filters.user_id}
+                                onChange={(e) => handleFilterChange('user_id', e.target.value)}
+                                className="px-3 py-2 text-sm border border-[var(--neutral-300)] rounded-lg"
+                            >
+                                <option value="">Semua User</option>
+                                {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                             </select>
 
-                            <select className="px-3 py-2 text-sm border border-[var(--neutral-300)] rounded-lg">
-                                <option>Semua Aksi</option>
-                                <option>LOGIN</option>
-                                <option>LOGOUT</option>
-                                <option>EDIT</option>
-                                <option>HAPUS</option>
-                                <option>KONTROL_POMPA</option>
+                            <select
+                                value={filters.action}
+                                onChange={(e) => handleFilterChange('action', e.target.value)}
+                                className="px-3 py-2 text-sm border border-[var(--neutral-300)] rounded-lg"
+                            >
+                                <option value="">Semua Aksi</option>
+                                <option value="LOGIN">LOGIN</option>
+                                <option value="LOGOUT">LOGOUT</option>
+                                <option value="EDIT">EDIT</option>
+                                <option value="HAPUS">HAPUS</option>
+                                <option value="KONTROL_POMPA">KONTROL_POMPA</option>
+                                <option value="TANDAI_FERTIGASI">TANDAI_FERTIGASI</option>
                             </select>
 
-                            <input type="date" className="px-3 py-2 text-sm border border-[var(--neutral-300)] rounded-lg" />
+                            <input
+                                type="date"
+                                value={filters.date}
+                                onChange={(e) => handleFilterChange('date', e.target.value)}
+                                className="px-3 py-2 text-sm border border-[var(--neutral-300)] rounded-lg"
+                            />
                         </div>
                     </div>
 
@@ -73,41 +85,55 @@ export default function AdminActivityLog() {
                                     <th className="px-4 py-3 text-left">User</th>
                                     <th className="px-4 py-3 text-left">Aksi</th>
                                     <th className="px-4 py-3 text-left">Target</th>
-                                    <th className="px-4 py-3 text-left">Detail Sebelum/Sesudah</th>
+                                    <th className="px-4 py-3 text-left">Detail</th>
                                     <th className="px-4 py-3 text-left">IP</th>
                                 </tr>
                             </thead>
                             <tbody className="text-sm">
-                                {logs.map((log, idx) => (
-                                    <tr key={idx} className="border-b border-[var(--neutral-100)] hover:bg-[var(--neutral-50)]">
-                                        <td className="px-4 py-3 text-[var(--neutral-700)] font-mono text-xs">{log.waktu}</td>
-                                        <td className="px-4 py-3 text-[var(--neutral-900)]">{log.user}</td>
-                                        <td className="px-4 py-3">
-                                            <span className={`px-2 py-0.5 text-xs rounded-full font-mono ${getAksiColor(log.aksi)}`}>
-                                                {log.aksi}
-                                            </span>
+                                {logs.data.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={6} className="px-4 py-12 text-center text-[var(--neutral-500)]">
+                                            Tidak ada log untuk filter ini.
                                         </td>
-                                        <td className="px-4 py-3 text-[var(--neutral-700)]">{log.target}</td>
-                                        <td className="px-4 py-3 text-[var(--neutral-600)] text-xs">{log.detail}</td>
-                                        <td className="px-4 py-3 text-[var(--neutral-600)] font-mono text-xs">{log.ip}</td>
                                     </tr>
-                                ))}
+                                ) : (
+                                    logs.data.map((log) => (
+                                        <tr key={log.id} className="border-b border-[var(--neutral-100)] hover:bg-[var(--neutral-50)]">
+                                            <td className="px-4 py-3 text-[var(--neutral-700)] font-mono text-xs">{log.created_at}</td>
+                                            <td className="px-4 py-3 text-[var(--neutral-900)]">{log.user_name}</td>
+                                            <td className="px-4 py-3">
+                                                <span className={`px-2 py-0.5 text-xs rounded-full font-mono ${getAksiColor(log.action)}`}>
+                                                    {log.action}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 text-[var(--neutral-700)] text-xs">{log.target}</td>
+                                            <td className="px-4 py-3 text-[var(--neutral-600)] text-xs">{log.description}</td>
+                                            <td className="px-4 py-3 text-[var(--neutral-600)] font-mono text-xs">{log.ip_address}</td>
+                                        </tr>
+                                    ))
+                                )}
                             </tbody>
                         </table>
                     </div>
 
                     <div className="p-4 flex items-center justify-between text-sm flex-wrap gap-2">
-                        <div className="text-[var(--neutral-600)]">Menampilkan 1–8 dari 142 entri</div>
-                        <div className="flex items-center gap-2">
-                            <button className="px-3 py-1.5 border border-[var(--neutral-300)] rounded-lg hover:bg-[var(--neutral-50)] disabled:opacity-50">
-                                ‹ Prev
-                            </button>
-                            <button className="px-3 py-1.5 bg-[var(--primary-500)] text-white rounded-lg">1</button>
-                            <button className="px-3 py-1.5 border border-[var(--neutral-300)] rounded-lg hover:bg-[var(--neutral-50)]">2</button>
-                            <button className="px-3 py-1.5 border border-[var(--neutral-300)] rounded-lg hover:bg-[var(--neutral-50)]">3</button>
-                            <button className="px-3 py-1.5 border border-[var(--neutral-300)] rounded-lg hover:bg-[var(--neutral-50)]">
-                                Next ›
-                            </button>
+                        <div className="text-[var(--neutral-600)]">
+                            Menampilkan {logs.from ?? 0}–{logs.to ?? 0} dari {logs.total} entri
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                            {logs.links?.map((link, idx) => (
+                                <button
+                                    key={idx}
+                                    disabled={!link.url}
+                                    onClick={() => link.url && router.visit(link.url, { preserveScroll: true })}
+                                    className={`px-3 py-1.5 border rounded-lg text-sm ${
+                                        link.active
+                                            ? 'bg-[var(--primary-500)] text-white border-[var(--primary-500)]'
+                                            : 'border-[var(--neutral-300)] hover:bg-[var(--neutral-50)] disabled:opacity-50'
+                                    }`}
+                                    dangerouslySetInnerHTML={{ __html: link.label }}
+                                />
+                            ))}
                         </div>
                     </div>
                 </div>

@@ -1,21 +1,27 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import { CheckCircle, ArrowLeft } from 'lucide-react';
 
 export default function AccessRequest() {
     const [submitted, setSubmitted] = useState(false);
-    const [formData, setFormData] = useState({
-        nama: '',
+
+    const { data, setData, post, processing, errors, reset } = useForm({
+        full_name: '',
         email: '',
-        whatsapp: '',
-        jenis: 'reset',
-        alasan: '',
+        wa_number: '',
+        request_type: 'reset_password',
+        reason: '',
     });
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // TODO: integrasi ke /akses POST endpoint (besok)
-        setSubmitted(true);
+        post('/akses', {
+            preserveScroll: true,
+            onSuccess: () => {
+                setSubmitted(true);
+                reset();
+            },
+        });
     };
 
     if (submitted) {
@@ -55,39 +61,42 @@ export default function AccessRequest() {
 
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-[var(--neutral-700)] mb-1">Nama Lengkap</label>
+                            <label className="block text-sm font-medium text-[var(--neutral-700)] mb-1">Nama Lengkap *</label>
                             <input
                                 type="text"
-                                value={formData.nama}
-                                onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
+                                value={data.full_name}
+                                onChange={(e) => setData('full_name', e.target.value)}
                                 placeholder="Tedi Suherman"
                                 required
                                 className="w-full px-4 py-2.5 border border-[var(--neutral-300)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-500)]"
                             />
+                            {errors.full_name && <p className="text-xs text-[var(--danger)] mt-1">{errors.full_name}</p>}
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-[var(--neutral-700)] mb-1">Email</label>
+                            <label className="block text-sm font-medium text-[var(--neutral-700)] mb-1">Email *</label>
                             <input
                                 type="email"
-                                value={formData.email}
-                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                value={data.email}
+                                onChange={(e) => setData('email', e.target.value)}
                                 placeholder="tedi@prodaya.id"
                                 required
                                 className="w-full px-4 py-2.5 border border-[var(--neutral-300)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-500)]"
                             />
+                            {errors.email && <p className="text-xs text-[var(--danger)] mt-1">{errors.email}</p>}
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-[var(--neutral-700)] mb-1">No. WhatsApp</label>
+                            <label className="block text-sm font-medium text-[var(--neutral-700)] mb-1">No. WhatsApp *</label>
                             <input
                                 type="tel"
-                                value={formData.whatsapp}
-                                onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+                                value={data.wa_number}
+                                onChange={(e) => setData('wa_number', e.target.value)}
                                 placeholder="08xxxxxxxxxx"
                                 required
                                 className="w-full px-4 py-2.5 border border-[var(--neutral-300)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-500)]"
                             />
+                            {errors.wa_number && <p className="text-xs text-[var(--danger)] mt-1">{errors.wa_number}</p>}
                         </div>
 
                         <div>
@@ -96,10 +105,10 @@ export default function AccessRequest() {
                                 <label className="flex items-center gap-3 p-3 border border-[var(--neutral-300)] rounded-lg cursor-pointer hover:bg-[var(--neutral-50)]">
                                     <input
                                         type="radio"
-                                        name="jenis"
-                                        value="reset"
-                                        checked={formData.jenis === 'reset'}
-                                        onChange={(e) => setFormData({ ...formData, jenis: e.target.value })}
+                                        name="request_type"
+                                        value="reset_password"
+                                        checked={data.request_type === 'reset_password'}
+                                        onChange={(e) => setData('request_type', e.target.value)}
                                         className="w-4 h-4 text-[var(--primary-500)]"
                                     />
                                     <span className="text-sm text-[var(--neutral-700)]">Reset password</span>
@@ -107,10 +116,10 @@ export default function AccessRequest() {
                                 <label className="flex items-center gap-3 p-3 border border-[var(--neutral-300)] rounded-lg cursor-pointer hover:bg-[var(--neutral-50)]">
                                     <input
                                         type="radio"
-                                        name="jenis"
-                                        value="baru"
-                                        checked={formData.jenis === 'baru'}
-                                        onChange={(e) => setFormData({ ...formData, jenis: e.target.value })}
+                                        name="request_type"
+                                        value="new_account"
+                                        checked={data.request_type === 'new_account'}
+                                        onChange={(e) => setData('request_type', e.target.value)}
                                         className="w-4 h-4 text-[var(--primary-500)]"
                                     />
                                     <span className="text-sm text-[var(--neutral-700)]">Akun baru</span>
@@ -123,8 +132,8 @@ export default function AccessRequest() {
                                 Alasan / Catatan <span className="text-[var(--neutral-500)]">(opsional)</span>
                             </label>
                             <textarea
-                                value={formData.alasan}
-                                onChange={(e) => setFormData({ ...formData, alasan: e.target.value })}
+                                value={data.reason}
+                                onChange={(e) => setData('reason', e.target.value)}
                                 placeholder="Jelaskan alasan permintaan akses..."
                                 rows={3}
                                 className="w-full px-4 py-2.5 border border-[var(--neutral-300)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-500)] resize-none"
@@ -133,9 +142,10 @@ export default function AccessRequest() {
 
                         <button
                             type="submit"
-                            className="w-full py-3 bg-[var(--primary-500)] text-white rounded-lg font-medium hover:bg-[var(--primary-600)] transition-colors"
+                            disabled={processing}
+                            className="w-full py-3 bg-[var(--primary-500)] text-white rounded-lg font-medium hover:bg-[var(--primary-600)] disabled:opacity-50"
                         >
-                            Kirim Permintaan
+                            {processing ? 'Mengirim...' : 'Kirim Permintaan'}
                         </button>
                     </form>
 

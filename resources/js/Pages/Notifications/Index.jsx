@@ -1,21 +1,27 @@
-import { Head } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head, router } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
 
-export default function NotificationsIndex() {
-    const [activeTab, setActiveTab] = useState('semua');
+export default function NotificationsIndex({ alerts = [], blocks = [], counts = {}, filters = {} }) {
+    const handleFilterChange = (key, value) => {
+        router.get('/notifikasi', { ...filters, [key]: value }, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
 
-    const notifications = [
-        { id: 1, severity: 'kritis', title: 'TDS Kritis · Blok A1', description: 'Nilai TDS 870 ppm, di bawah threshold minimum 950', time: '14:32', blok: 'Blok A1', status: 'aktif' },
-        { id: 2, severity: 'peringatan', title: 'Kelembaban Rendah · Blok A1', description: 'Moisture 48%, mendekati batas minimum 45%', time: '13:15', blok: 'Blok A1', status: 'aktif' },
-        { id: 3, severity: 'info', title: 'Fase Rawan · Blok A1', description: 'Memasuki HST 14, fase rawan nutrisi & hama. Tingkatkan pengawasan.', time: '12:00', blok: 'Blok A1', status: 'diabaikan' },
-        { id: 4, severity: 'info', title: 'Jadwal Fertigasi · Blok A1', description: 'Jadwal fertigasi 12:00 mendekati', time: '11:55', blok: 'Blok A1', status: 'selesai' },
-        { id: 5, severity: 'kritis', title: 'ESP32 Disconnect · Blok A1', description: 'Koneksi terputus selama 5 menit, sudah reconnect', time: '03:14', blok: 'Blok A1', status: 'selesai' },
-    ];
+    const handleResolve = (id) => {
+        if (!confirm('Tandai alert ini selesai?')) return;
+        router.post(`/notifikasi/${id}/resolve`, {}, { preserveScroll: true });
+    };
+
+    const handleIgnore = (id) => {
+        if (!confirm('Abaikan alert ini?')) return;
+        router.post(`/notifikasi/${id}/ignore`, {}, { preserveScroll: true });
+    };
 
     const getSeverityIcon = (severity) => {
-        if (severity === 'kritis') return '🔴';
-        if (severity === 'peringatan') return '🟡';
+        if (severity === 'critical') return '🔴';
+        if (severity === 'warning') return '🟡';
         if (severity === 'info') return '🔵';
         return '⚪';
     };
@@ -36,9 +42,6 @@ export default function NotificationsIndex() {
                         <h1 className="text-3xl font-bold text-[var(--neutral-900)] mb-2">Notifikasi & Alert</h1>
                         <p className="text-sm text-[var(--neutral-600)]">Pusat semua peringatan, info, dan event sistem</p>
                     </div>
-                    <button className="px-4 py-2 bg-white border border-[var(--neutral-300)] rounded-lg hover:bg-[var(--neutral-50)] text-sm">
-                        Tandai Semua Sudah Dibaca
-                    </button>
                 </div>
 
                 <div className="bg-white border border-[var(--neutral-200)] rounded-xl overflow-hidden">
@@ -51,70 +54,81 @@ export default function NotificationsIndex() {
                         ].map((tab) => (
                             <button
                                 key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
+                                onClick={() => handleFilterChange('tab', tab.id)}
                                 className={`px-6 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                                    activeTab === tab.id
+                                    filters.tab === tab.id
                                         ? 'border-[var(--primary-500)] text-[var(--primary-500)]'
                                         : 'border-transparent text-[var(--neutral-600)] hover:text-[var(--neutral-900)]'
                                 }`}
                             >
-                                {tab.label}
+                                {tab.label} {counts[tab.id] != null && `(${counts[tab.id]})`}
                             </button>
                         ))}
                     </div>
 
-                    {/* Filters */}
                     <div className="p-4 border-b border-[var(--neutral-200)] bg-[var(--neutral-50)]">
                         <div className="flex flex-wrap items-center gap-3">
-                            <select className="px-3 py-2 text-sm border border-[var(--neutral-300)] bg-white rounded-lg">
-                                <option>Semua Severity</option>
-                                <option>Kritis</option>
-                                <option>Peringatan</option>
-                                <option>Info</option>
+                            <select
+                                value={filters.severity}
+                                onChange={(e) => handleFilterChange('severity', e.target.value)}
+                                className="px-3 py-2 text-sm border border-[var(--neutral-300)] bg-white rounded-lg"
+                            >
+                                <option value="">Semua Severity</option>
+                                <option value="critical">Kritis</option>
+                                <option value="warning">Peringatan</option>
+                                <option value="info">Info</option>
                             </select>
-                            <select className="px-3 py-2 text-sm border border-[var(--neutral-300)] bg-white rounded-lg">
-                                <option>Semua Blok</option>
-                                <option>Blok A1</option>
-                                <option>Blok A2</option>
-                                <option>Blok A3</option>
-                                <option>Blok B1</option>
+                            <select
+                                value={filters.block_id}
+                                onChange={(e) => handleFilterChange('block_id', e.target.value)}
+                                className="px-3 py-2 text-sm border border-[var(--neutral-300)] bg-white rounded-lg"
+                            >
+                                <option value="">Semua Blok</option>
+                                {blocks.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                             </select>
-                            <input type="date" className="px-3 py-2 text-sm border border-[var(--neutral-300)] bg-white rounded-lg" />
+                            <input
+                                type="date"
+                                value={filters.date}
+                                onChange={(e) => handleFilterChange('date', e.target.value)}
+                                className="px-3 py-2 text-sm border border-[var(--neutral-300)] bg-white rounded-lg"
+                            />
                         </div>
                     </div>
 
-                    {/* List */}
                     <div>
-                        {notifications
-                            .filter((n) => activeTab === 'semua' || n.status === activeTab)
-                            .map((notif) => (
-                                <div key={notif.id} className="p-5 border-b border-[var(--neutral-100)] hover:bg-[var(--neutral-50)] cursor-pointer">
+                        {alerts.length === 0 ? (
+                            <div className="p-12 text-center text-sm text-[var(--neutral-500)]">
+                                Tidak ada alert untuk filter ini.
+                            </div>
+                        ) : (
+                            alerts.map((notif) => (
+                                <div key={notif.id} className="p-5 border-b border-[var(--neutral-100)] hover:bg-[var(--neutral-50)]">
                                     <div className="flex items-start gap-4">
                                         <div className="text-2xl flex-shrink-0">{getSeverityIcon(notif.severity)}</div>
-
                                         <div className="flex-1">
                                             <div className="flex items-start justify-between mb-2 flex-wrap gap-2">
                                                 <div>
                                                     <h3 className="font-semibold text-[var(--neutral-900)] mb-1">{notif.title}</h3>
-                                                    <p className="text-sm text-[var(--neutral-700)]">{notif.description}</p>
+                                                    <p className="text-sm text-[var(--neutral-700)]">{notif.message}</p>
                                                 </div>
                                                 {getStatusPill(notif.status)}
                                             </div>
-
                                             <div className="flex items-center gap-4 text-xs text-[var(--neutral-500)] flex-wrap">
-                                                <span>{notif.time}</span>
-                                                <span className="px-2 py-0.5 bg-[var(--neutral-100)] rounded-full">{notif.blok}</span>
+                                                <span>{notif.date} {notif.time}</span>
+                                                <span className="px-2 py-0.5 bg-[var(--neutral-100)] rounded-full">{notif.block_name}</span>
                                             </div>
-
                                             {notif.status === 'aktif' && (
                                                 <div className="flex items-center gap-2 mt-3 flex-wrap">
-                                                    <button className="px-3 py-1.5 text-xs bg-white border border-[var(--neutral-300)] rounded-lg hover:bg-[var(--neutral-50)]">
-                                                        Lihat Detail
-                                                    </button>
-                                                    <button className="px-3 py-1.5 text-xs bg-[var(--primary-500)] text-white rounded-lg hover:bg-[var(--primary-600)]">
+                                                    <button
+                                                        onClick={() => handleResolve(notif.id)}
+                                                        className="px-3 py-1.5 text-xs bg-[var(--primary-500)] text-white rounded-lg hover:bg-[var(--primary-600)]"
+                                                    >
                                                         Tandai Selesai
                                                     </button>
-                                                    <button className="px-3 py-1.5 text-xs bg-white border border-[var(--neutral-300)] text-[var(--neutral-600)] rounded-lg hover:bg-[var(--neutral-50)]">
+                                                    <button
+                                                        onClick={() => handleIgnore(notif.id)}
+                                                        className="px-3 py-1.5 text-xs bg-white border border-[var(--neutral-300)] text-[var(--neutral-600)] rounded-lg hover:bg-[var(--neutral-50)]"
+                                                    >
                                                         Abaikan
                                                     </button>
                                                 </div>
@@ -122,7 +136,8 @@ export default function NotificationsIndex() {
                                         </div>
                                     </div>
                                 </div>
-                            ))}
+                            ))
+                        )}
                     </div>
                 </div>
             </div>
