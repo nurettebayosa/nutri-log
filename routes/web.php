@@ -55,6 +55,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // === ROUTE KHUSUS OWNER (OWNER-ONLY) ===
     Route::middleware('owner')->group(function () {
+        // ── B2 Revisi: CRUD Blok (Owner-only) ──
+        Route::post('/blok', [BlockController::class, 'store'])->name('blocks.store');
+        Route::patch('/blok/{id}', [BlockController::class, 'update'])->name('blocks.update');
+        Route::delete('/blok/{id}', [BlockController::class, 'destroy'])->name('blocks.destroy');
+
         Route::get('/threshold', [ThresholdController::class, 'index'])->name('settings.threshold');
         Route::post('/threshold/{blockId}/{sensorType}', [ThresholdController::class, 'update'])->name('settings.threshold.update');
 
